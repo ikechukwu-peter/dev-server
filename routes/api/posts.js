@@ -4,15 +4,7 @@ const router = express.Router();
 const passport = require("passport");
 const Post = require("../../models/Post");
 const Profile = require("../../models/Profile");
-
 const validatePostInput = require("../../validation/post");
-
-router.get("/test", (req, res) => {
-  res.status(200).json({
-    status: "success",
-    msg: "Posts works",
-  });
-});
 
 router.post(
   "/",
@@ -24,11 +16,14 @@ router.post(
       // Return any errors with 400 status
       return res.status(400).json(errors);
     }
-
-    const { text, name, avatar } = req.body;
-    const user = req.user.id;
-    const post = await Post.create({ text, name, avatar, user });
-    res.json(post);
+    try {
+      const { text, name, avatar } = req.body;
+      const user = req.user.id;
+      const post = await Post.create({ text, name, avatar, user });
+      res.json(post);
+    } catch (err) {
+      res.status(500).json({ errors: err.message });
+    }
   }
 );
 

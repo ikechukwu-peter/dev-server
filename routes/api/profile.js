@@ -1,11 +1,13 @@
 const express = require("express");
 const router = express.Router();
 const passport = require("passport");
+const axios = require("axios");
 const Profile = require("../../models/Profile");
 const User = require("../../models/User");
 const validateProfileInput = require("../../validation/profile");
 const validateExperienceInput = require("../../validation/experience");
 const validateEducationInput = require("../../validation/education");
+const config = require("config");
 
 //Get profile
 router.get(
@@ -29,7 +31,7 @@ router.get(
     }
   }
 );
-//
+
 //Get all profiles
 router.get("/all", async (req, res) => {
   const errors = {
@@ -45,13 +47,28 @@ router.get("/all", async (req, res) => {
     res.status(404).json(err.message);
   }
 });
+//Get all profiles
+router.get("/", async (req, res) => {
+  const errors = {
+    noprofiles: "No Profiles",
+  };
+  try {
+    const profiles = await Profile.find();
+    if (!profiles) {
+      return res.status(400).json(errors.noprofiles);
+    }
+    res.status(200).json(profiles);
+  } catch (err) {
+    res.status(404).json(err.message);
+  }
+});
 //Get handle
 router.get("/handle/:handle", async (req, res) => {
   const errors = {};
   try {
     const profile = await Profile.findOne({
       handle: req.params.handle,
-    }).populate("user", ["name", "avatar"]);
+    });
     if (!profile) {
       errors.noprofile = "There is no profile for this user";
       return res.status(404).json(errors);
@@ -68,7 +85,7 @@ router.get("/user/:user_id", async (req, res) => {
   try {
     const profile = await Profile.findOne({
       user: req.params.user_id,
-    }).populate("user", ["name", "avatar"]);
+    });
 
     if (!profile) {
       errors.profile = "There is no profile for this user";
@@ -286,4 +303,22 @@ router.delete(
   }
 );
 
+router.get("/github/:username", async (req, res) => {
+  try {
+    const uri = encodeURI(
+      `https://api.github.com/users/${req.params.username}/repos?per_page=5&sort=created:asc`
+    );
+    const headers = {
+      "user-agent": "node.js",
+      Authorization: `token  ${config.get("gitHubToken")}`,
+    };
+
+    const gitHubResponse = await axios.get(uri, { headers });
+    //const gitHubResponse = await axios.get(uri, {headers});
+    return res.json(gitHubResponse.data);
+  } catch (err) {
+    console.log(err.message);
+    return res.status(404).json({ errors: "No Github profile found" });
+  }
+});
 module.exports = router;
