@@ -2,12 +2,14 @@ const express = require("express");
 const mongoose = require("mongoose");
 const dotenv = require("dotenv").config({ path: "./config.env" });
 const passport = require("passport");
+const cors = require("cors");
 
 const users = require("./routes/api/users");
 const profile = require("./routes/api/profile");
 const posts = require("./routes/api/posts");
 
 const app = express();
+app.use(cors());
 
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json({ limit: "10kb" }));
